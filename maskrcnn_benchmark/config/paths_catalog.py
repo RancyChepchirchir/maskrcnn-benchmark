@@ -5,7 +5,6 @@ import os
 
 
 class DatasetCatalog(object):
-    DATA_DIR = "datasets"
     DATASETS = {
         "coco_2017_train": {
             "img_dir": "coco/train2017",
@@ -107,9 +106,9 @@ class DatasetCatalog(object):
     }
 
     @staticmethod
-    def get(name):
+    def get(name, cfg):
+        data_dir = cfg.DATA_DIR
         if "coco" in name:
-            data_dir = DatasetCatalog.DATA_DIR
             attrs = DatasetCatalog.DATASETS[name]
             args = dict(
                 root=os.path.join(data_dir, attrs["img_dir"]),
@@ -120,7 +119,6 @@ class DatasetCatalog(object):
                 args=args,
             )
         elif "voc" in name:
-            data_dir = DatasetCatalog.DATA_DIR
             attrs = DatasetCatalog.DATASETS[name]
             args = dict(
                 data_dir=os.path.join(data_dir, attrs["data_dir"]),

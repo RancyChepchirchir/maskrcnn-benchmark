@@ -15,7 +15,7 @@ from .collate_batch import BatchCollator, BBoxAugCollator
 from .transforms import build_transforms
 
 
-def build_dataset(dataset_list, transforms, dataset_catalog, is_train=True):
+def build_dataset(dataset_list, transforms, dataset_catalog, cfg, is_train=True):
     """
     Arguments:
         dataset_list (list[str]): Contains the names of the datasets, i.e.,
@@ -23,6 +23,7 @@ def build_dataset(dataset_list, transforms, dataset_catalog, is_train=True):
         transforms (callable): transforms to apply to each (image, target) sample
         dataset_catalog (DatasetCatalog): contains the information on how to
             construct a dataset.
+        cfg (Config): configuration
         is_train (bool): whether to setup the dataset for training or testing
     """
     if not isinstance(dataset_list, (list, tuple)):
@@ -31,7 +32,7 @@ def build_dataset(dataset_list, transforms, dataset_catalog, is_train=True):
         )
     datasets = []
     for dataset_name in dataset_list:
-        data = dataset_catalog.get(dataset_name)
+        data = dataset_catalog.get(dataset_name, cfg)
         factory = getattr(D, data["factory"])
         args = data["args"]
         # for COCODataset, we want to remove images without annotations
@@ -148,12 +149,11 @@ def make_data_loader(cfg, is_train=True, is_distributed=False, start_iter=0):
     paths_catalog = import_file(
         "maskrcnn_benchmark.config.paths_catalog", cfg.PATHS_CATALOG, True
     )
-    DatasetCatalog = paths_catalog.DatasetCatalog
     dataset_list = cfg.DATASETS.TRAIN if is_train else cfg.DATASETS.TEST
 
     # If bbox aug is enabled in testing, simply set transforms to None and we will apply transforms later
     transforms = None if not is_train and cfg.TEST.BBOX_AUG.ENABLED else build_transforms(cfg, is_train)
-    datasets = build_dataset(dataset_list, transforms, DatasetCatalog, is_train)
+    datasets = build_dataset(dataset_list, transforms, paths_catalog.DatasetCatalog, cfg, is_train)
 
     if is_train:
         # save category_id to label name mapping
